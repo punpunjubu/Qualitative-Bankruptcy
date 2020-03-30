@@ -1,0 +1,99 @@
+---
+title: "R Notebook"
+output:
+  html_document:
+    df_print: paged
+---
+
+
+```{r}
+# install.packages("rJava")
+# install.packages('RWeka')
+# remove.packages("rJava")
+# remove.packages("RWeka")
+
+library(rJava)
+library(RWeka)
+
+df <- read.csv('Qualitative_Bankruptcy.csv')
+df
+```
+
+```{r}
+str(df)
+
+```
+```{r}
+# install.packages('rpart.plot')
+# install.packages('partykit')
+library(dplyr)
+library(partykit)
+library(rpart.plot)
+
+```
+Create tree
+```{r}
+tree_c45NoPruning <- J48(Class~., data= df, control = Weka_control(R = F)) #R = F, no pruning
+plot(tree_c45NoPruning)
+```
+```{r}
+tree_c45Pruning <- J48(Class~., data= df, control = Weka_control(R = T)) #R = T, pruning
+plot(tree_c45Pruning)
+
+```
+```{r}
+evaluate_Weka_classifier(tree_c45NoPruning, numFolds = 10, complexity = T,
+                         class = T, seed = 1234)
+```
+```{r}
+evaluate_Weka_classifier(tree_c45Pruning, numFolds = 10, complexity = T,
+                         class = T, seed = 1234)
+```
+Bagging
+```{r}
+tree_c45_bag <- Bagging(Class~., data= df, control = Weka_control(I = 200, W = list(J48, R = T)) ) #I = iteration
+#summary(BagTree)
+
+
+```
+```{r}
+evaluate_Weka_classifier(tree_c45_bag, numFolds = 10, complexity = T,
+                         class = T, seed = 1234)
+```
+Boosting
+```{r}
+tree_c45_boost <- AdaBoostM1(Class~., data= df, control = Weka_control(I=200, W = list(J48, R = T)))
+#summary(BagTree)
+
+
+```
+```{r}
+evaluate_Weka_classifier(tree_c45_boost, numFolds = 10, complexity = T,
+                         class = T, seed = 1234)
+```
+Random Forest (RF)
+
+```{r}
+#if using RWeka, need to run this line 
+RF <- make_Weka_classifier("weka/classifiers/trees/RandomForest")
+tree_RF<- RF(Class~., data= df, control = Weka_control(I=150)) #I for RF is number of trees
+evaluate_Weka_classifier(tree_RF, numFolds = 10, complexity = T,
+                         class = T, seed = 1234)
+```
+```{r}
+#using package randomForest
+library(randomForest)
+tree_RF2 <- randomForest(Class~., data=df, na.action = na.omit, importance=TRUE, ntree=150)
+print(tree_RF2) # google "rfUtilities" for cv options
+```
+```{r}
+importance(tree_RF2)
+```
+สรุปอัลกอริทึมที่มีประสิทธิภาพในการจำแนกคาสได้ดีที่สุดคือ Random Forest ทั้้งที่เป็น System Library และ Library ของ Rweka ต่างจำแนกคาสได้Error เป็น 0
+```{r}
+
+```
+```{r}
+
+```
+```{r}
